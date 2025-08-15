@@ -42,21 +42,26 @@ else:
 
 # Resolve unkonwn emails
 is_new_email = False
+
 for email in emails:
 
     if email in emails_to_ids:
         continue;
 
-    response = client.users_lookupByEmail(email=email)   
-    if response['ok']:
-        user_id = response['user']['id']
-        emails_to_ids[email] = user_id
-        print(f"Email {email} has been resolved to {user_id}")
-        is_new_email = True
-    else:
-        raise ValueError("User with " + email + " is not registered in Slack workspace")
-    
-    time.sleep(CALL_THROTLE_SEC)
+    try:
+        response = client.users_lookupByEmail(email=email)   
+
+        if response['ok']:
+            user_id = response['user']['id']
+            emails_to_ids[email] = user_id
+            print(f"Email {email} has been resolved to {user_id}")
+            is_new_email = True
+        else:
+            print(f"Unable to get user id for {email}, response: {response}")
+        
+        time.sleep(CALL_THROTLE_SEC)
+    except SlackApiError as e:
+        print(f"User wasn't found, original error: {e.response['error']}")
 
 # Update the mapping
 if is_new_email:
